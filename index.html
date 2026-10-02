@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Step Countdown</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f7f6;--card:#fff;--tx:#12201d;--mut:#5b6b67;--ac:#0f766e;--ln:#dbe4e1;--hl:#e0f2ef;--ok:#15803d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1614;--card:#17221f;--tx:#e8f1ee;--mut:#9bb0aa;--ac:#2dd4bf;--ln:#2a3a36;--hl:#183a35;--ok:#4ade80}}
+:root[data-theme="dark"]{--bg:#0e1614;--card:#17221f;--tx:#e8f1ee;--mut:#9bb0aa;--ac:#2dd4bf;--ln:#2a3a36;--hl:#183a35;--ok:#4ade80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px}
+h1{font-size:14px;letter-spacing:.2em;margin:0;color:var(--ac)}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+label{display:block;font-weight:600;margin:18px 0 6px}
+textarea{width:100%;font:12px monospace;padding:10px;border:1px solid var(--ln);border-radius:10px;background:var(--card);color:var(--tx)}
+input{width:100%;font:inherit;padding:12px;border:1px solid var(--ln);border-radius:10px;background:var(--card);color:var(--tx)}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:14px;background:var(--ac);color:#fff;width:100%;margin-top:22px}
+@media (prefers-color-scheme:dark){button{color:#04211d}}
+button.sec{background:transparent;color:var(--ac);border:1px solid var(--ln);margin-top:10px;padding:10px}
+.err{color:#dc2626;margin-top:12px;min-height:1.2em}
+.top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-bottom:8px;z-index:2}
+.hd{display:flex;justify-content:space-between;align-items:center;padding:4px 0 10px}
+.hd .gear{width:auto;margin:0;padding:6px 12px;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.c{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:10px 12px}
+.c small{color:var(--mut);display:block;font-size:12px}
+.c b{font-size:20px;font-variant-numeric:tabular-nums}
+.big{grid-column:1/-1;background:var(--ac);color:#fff;border:0}
+.big small{color:inherit;opacity:.85}.big b{font-size:26px}
+@media (prefers-color-scheme:dark){.big{color:#04211d}}
+.bar{height:8px;background:var(--ln);border-radius:9px;overflow:hidden;margin:10px 0 2px}
+.bar i{display:block;height:100%;background:var(--ac);width:0}
+.pct{font-size:12px;color:var(--mut);text-align:right}
+.ok{color:var(--ok)}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+th{text-align:left;font-size:12px;color:var(--mut);padding:6px 8px}
+td{padding:4px 8px;border-top:1px solid var(--ln)}
+td input{padding:8px;text-align:right}#p1 td{font-size:15px;padding:4px 3px}#p1 td:first-child{white-space:nowrap}#p1 td input{padding:8px 6px;text-align:right;font-size:15px}td.pw{text-align:right;color:var(--mut);font-variant-numeric:tabular-nums}th.r{text-align:right}
+tr.today{background:var(--hl)}
+.hidden{display:none}
+select{width:100%;font:inherit;padding:12px;border:1px solid var(--ln);border-radius:10px;background:var(--card);color:var(--tx)}
+.fl{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.fm{font-size:14px;color:var(--mut);margin-top:4px;line-height:1.45}
+.cel{color:var(--ok);font-weight:700}
+.late{color:#d97706}
+.xc{margin-top:10px}
+.xc button{margin-top:10px;padding:10px;width:100%}
+
+#p2 .pct{display:flex;justify-content:space-between}
+tr.now{background:var(--hl)}
+body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px);z-index:9}
+nav button{flex:1;margin:0;width:auto;background:transparent;color:var(--mut);border-radius:0;padding:10px 4px;font-size:12px;font-weight:600;line-height:1.3}
+nav button span{display:block;font-size:20px}
+nav button.on{color:var(--ac)}
+.hc{margin-top:14px;padding:14px}
+.hc b{font-size:17px;display:block}
+.hc small{font-size:13px;margin-top:2px}
+.hc .sum{margin-top:10px;font-size:15px;font-variant-numeric:tabular-nums}
+.hc button{margin-top:12px;padding:11px}
+.lead{color:var(--mut);margin:10px 0 0}
+</style>
+</head>
+<body>
+<section class="wrap" id="p0">
+  <h1>STEP COUNTDOWN</h1>
+  <p class="lead">Choisis la partie que tu veux ouvrir.</p>
+  <div class="c hc"><b>👣 Partie 1 — Step Countdown</b><small>Objectif de pas sur plusieurs jours, avec suivi du poids</small>
+    <div class="sum" id="h1s"></div><button data-go="1">Ouvrir la partie 1</button></div>
+  <div class="c hc"><b>⏱️ Partie 2 — Step Countdown 24h</b><small>Objectif de pas du jour, heure par heure</small>
+    <div class="sum" id="h2s"></div><button data-go="2">Ouvrir la partie 2</button></div>
+</section>
+<section id="p1" class="hidden">
+<div class="wrap" id="a_setup">
+  <h1>STEP COUNTDOWN</h1>
+  <label for="a_goal">Quel est ton objectif total de pas ?</label>
+  <input id="a_goal" inputmode="numeric" autocomplete="off" placeholder="ex. 5 500 000">
+  <label for="a_d1">Date de début</label>
+  <input id="a_d1" type="date">
+  <label for="a_d2">Date de fin</label>
+  <input id="a_d2" type="date">
+  <label for="a_wa">Poids de départ (kg) <small style="font-weight:400;color:var(--mut)">– optionnel</small></label>
+  <input id="a_wa" inputmode="decimal" autocomplete="off" value="80,2">
+  <label for="a_wb">Poids cible (kg)</label>
+  <input id="a_wb" inputmode="decimal" autocomplete="off" value="58">
+  <label for="a_wd">Date du poids cible</label>
+  <input id="a_wd" type="date" value="2028-02-14">
+  <div class="err" id="a_err"></div>
+  <button id="a_go">Commencer le challenge</button>
+  <button class="sec hidden" id="a_cancel">Annuler</button>
+  <button class="sec hidden" id="a_reset">Tout réinitialiser</button>
+</div>
+
+<div class="wrap hidden" id="a_backup">
+  <h1>SAUVEGARDE</h1>
+  <label>Exporter</label>
+  <button id="a_ex" style="margin-top:0">Générer mon code de sauvegarde</button>
+  <textarea id="a_code" rows="5" readonly placeholder="Ton code apparaîtra ici" style="margin-top:10px"></textarea>
+  <button class="sec" id="a_cp">Copier le code</button>
+  <label>Importer</label>
+  <textarea id="a_imp" rows="5" placeholder="Colle ici ton code de sauvegarde"></textarea>
+  <button id="a_im" style="margin-top:10px">Importer</button>
+  <div class="err" id="a_bmsg"></div>
+  <div class="c" style="margin-top:14px;line-height:1.5">
+    <b style="font-size:16px">Guide</b><br>
+    <b style="font-size:14px">Exporter</b><br>
+    1. Appuie sur « Générer mon code de sauvegarde ».<br>
+    2. Appuie sur « Copier le code ».<br>
+    3. Colle-le dans un endroit sûr : Notes, Google Keep, ou un message à toi-même (WhatsApp, e-mail).<br><br>
+    <b style="font-size:14px">Importer (nouveau téléphone ou après un effacement)</b><br>
+    1. Ouvre Step Countdown, puis « Sauvegarde ». Sur un appareil neuf, crée d'abord un challenge (n'importe quelles valeurs).<br>
+    2. Copie ton code depuis tes Notes / ton message.<br>
+    3. Colle-le dans la zone « Importer », puis appuie sur « Importer » et confirme.<br>
+    Les données actuelles sont remplacées par celles du code.
+  </div>
+  <button class="sec" id="a_bback">Retour</button>
+</div>
+
+<div class="wrap hidden" id="a_main">
+  <div class="top">
+    <div class="hd"><h1>STEP COUNTDOWN</h1><div style="display:flex;gap:6px"><button class="sec gear" id="a_bk">Sauvegarde</button><button class="sec gear" id="a_edit">Modifier</button></div></div>
+    <div class="grid">
+      <div class="c big"><small id="a_needL">Pas nécessaires par jour</small><b id="a_need">–</b></div>
+      <div class="c"><small>Pas cumulés</small><b id="a_cum">0</b></div>
+      <div class="c"><small id="a_remL">Pas restants</small><b id="a_rem">0</b></div>
+      <div class="c"><small>Jours restants (non remplis)</small><b id="a_days">0</b></div>
+      <div class="c"><small>Objectif</small><b id="a_g">0</b></div>
+    </div>
+    <div class="bar"><i id="a_bar"></i></div><div class="pct" id="a_pct"></div>
+  </div>
+  <div class="c xc" id="a_focus"><small>🎯 Focus goal (optionnel)</small>
+    <div id="a_fview"></div>
+    <div id="a_fedit" class="hidden">
+      <label for="a_ftype" style="margin:8px 0 6px">Période</label>
+      <select id="a_ftype"><option value="week">Semaine en cours</option><option value="month">Mois en cours</option></select>
+      <label for="a_fgoal" style="margin:12px 0 6px">Objectif de pas pour cette période</label>
+      <input id="a_fgoal" inputmode="numeric" autocomplete="off" placeholder="ex. 50 000">
+      <div class="err" id="a_ferr"></div>
+      <button id="a_fsave" style="margin-top:8px">Enregistrer</button>
+      <button class="sec" id="a_fcancel">Annuler</button>
+      <button class="sec hidden" id="a_fdel">Retirer le focus goal</button>
+    </div>
+    <button class="sec hidden" id="a_frenew">Renouveler pour la période en cours</button>
+    <button class="sec" id="a_fopen">Définir un focus goal</button>
+  </div>
+  <div class="c xc" id="a_proj"><small>Si tu continues comme ça…</small><div id="a_pview"></div></div>
+  <table><thead><tr><th>Date</th><th class="r">Pas</th><th class="r">Poids prévu</th><th class="r">Poids réel</th></tr></thead><tbody id="a_rows"></tbody></table>
+</div>
+
+</section>
+<section id="p2" class="hidden">
+<div class="wrap" id="b_setup">
+  <h1>STEP COUNTDOWN 24H</h1>
+  <label for="b_goal">Quel est ton objectif de pas pour la journée ?</label>
+  <input id="b_goal" inputmode="numeric" autocomplete="off" placeholder="ex. 12 000">
+  <div class="err" id="b_err"></div>
+  <button id="b_go">Commencer la journée</button>
+  <button class="sec hidden" id="b_cancel">Annuler</button>
+  <button class="sec hidden" id="b_reset">Tout réinitialiser</button>
+</div>
+
+<div class="wrap hidden" id="b_backup">
+  <h1>SAUVEGARDE</h1>
+  <label>Exporter</label>
+  <button id="b_ex" style="margin-top:0">Générer mon code de sauvegarde</button>
+  <textarea id="b_code" rows="5" readonly placeholder="Ton code apparaîtra ici" style="margin-top:10px"></textarea>
+  <button class="sec" id="b_cp">Copier le code</button>
+  <label>Importer</label>
+  <textarea id="b_imp" rows="5" placeholder="Colle ici ton code de sauvegarde"></textarea>
+  <button id="b_im" style="margin-top:10px">Importer</button>
+  <div class="err" id="b_bmsg"></div>
+  <div class="c" style="margin-top:14px;line-height:1.5">
+    <b style="font-size:16px">Guide</b><br>
+    <b style="font-size:14px">Exporter</b><br>
+    1. Appuie sur « Générer mon code de sauvegarde ».<br>
+    2. Appuie sur « Copier le code ».<br>
+    3. Colle-le dans un endroit sûr : Notes, Google Keep, ou un message à toi-même.<br><br>
+    <b style="font-size:14px">Importer (nouveau téléphone ou après un effacement)</b><br>
+    1. Ouvre Step Countdown 24h, puis « Sauvegarde ». Sur un appareil neuf, crée d'abord un objectif (n'importe quelle valeur).<br>
+    2. Copie ton code depuis tes Notes / ton message.<br>
+    3. Colle-le dans la zone « Importer », appuie sur « Importer » et confirme.<br>
+    Les données actuelles sont remplacées par celles du code.
+  </div>
+  <button class="sec" id="b_bback">Retour</button>
+</div>
+
+<div class="wrap hidden" id="b_main">
+  <div class="top">
+    <div class="hd"><h1>STEP COUNTDOWN 24H</h1>
+      <div style="display:flex;gap:6px"><button class="sec gear" id="b_bk">Sauvegarde</button><button class="sec gear" id="b_edit">Modifier</button></div></div>
+    <div class="grid">
+      <div class="c big"><small id="b_needL">Pas nécessaires par heure</small><b id="b_need">–</b></div>
+      <div class="c"><small>Pas cumulés</small><b id="b_cum">0</b></div>
+      <div class="c"><small id="b_remL">Pas restants</small><b id="b_rem">0</b></div>
+      <div class="c"><small>Heures restantes (non remplies)</small><b id="b_hrs">0</b></div>
+      <div class="c"><small>Objectif du jour</small><b id="b_g">0</b></div>
+    </div>
+    <div class="bar"><i id="b_bar"></i></div><div class="pct"><span id="b_dt"></span><span id="b_pct"></span></div>
+  </div>
+  <table><thead><tr><th>Heure</th><th>Pas</th></tr></thead><tbody id="b_rows"></tbody></table>
+</div>
+
+</section>
+<nav><button data-go="0"><span>🏠</span>Accueil</button><button data-go="1"><span>👣</span>Partie 1</button><button data-go="2"><span>⏱️</span>Partie 2</button></nav>
+
+<script>
+(function(){
+
+const K='stepcountdown.v1';
+const $=id=>document.getElementById('a_'+id);
+const fmt=n=>Number(n).toLocaleString('fr-FR');
+const digits=s=>String(s).replace(/\D/g,'');
+let S=load();
+function load(){try{const o=JSON.parse(localStorage.getItem(K))||null;
+  if(o){if(o.w===undefined)o.w={a:'80.2',b:'58',d:'2028-02-14'};o.wt=o.wt||{}}return o}catch(e){return null}}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const iso2t=s=>{const[a,b,c]=s.split('-').map(Number);return Date.UTC(a,b-1,c)};
+const t2iso=t=>new Date(t).toISOString().slice(0,10);
+const dfr=s=>s.split('-').reverse().join('/');
+const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const DAY=864e5;
+
+function showSetup(edit){
+  $('setup').classList.remove('hidden');$('main').classList.add('hidden');$('backup').classList.add('hidden');
+  $('cancel').classList.toggle('hidden',!edit);$('reset').classList.toggle('hidden',!edit);
+  $('go').textContent=edit?'Enregistrer':'Commencer le challenge';
+  if(edit&&S){$('goal').value=fmt(S.goal);$('d1').value=S.start;$('d2').value=S.end;
+    $('wa').value=S.w?S.w.a.replace('.',','):'';$('wb').value=S.w?S.w.b.replace('.',','):'';$('wd').value=S.w?S.w.d:''}
+  $('err').textContent='';
+}
+$('goal').addEventListener('input',e=>{const d=digits(e.target.value);e.target.value=d?fmt(d.replace(/^0+/,'')||'0'):''});
+$('go').onclick=()=>{
+  const g=digits($('goal').value),a=$('d1').value,b=$('d2').value;
+  if(!g||!a||!b)return $('err').textContent='Les trois champs sont obligatoires.';
+  if(!+g)return $('err').textContent='Le goal doit être un entier positif.';
+  if(iso2t(b)<iso2t(a))return $('err').textContent='La date de fin doit être après la date de début.';
+  if((iso2t(b)-iso2t(a))/DAY>3660)return $('err').textContent='Période trop longue (10 ans maximum).';
+  const A=$('wa').value.trim().replace(',','.'),B=$('wb').value.trim().replace(',','.'),D=$('wd').value;
+  let w=null;
+  if(A||B||D){
+    if(!(parseFloat(A)>0)||!(parseFloat(B)>0)||!D)return $('err').textContent='Poids : remplis les trois champs (ou laisse-les tous vides).';
+    if(iso2t(D)<=iso2t(a))return $('err').textContent='La date du poids cible doit être après la date de début.';
+    w={a:String(parseFloat(A)),b:String(parseFloat(B)),d:D};
+  }
+  S={goal:g,start:a,end:b,steps:(S&&S.steps)||{},w:w,wt:(S&&S.wt)||{},focus:(S&&S.focus)||null};save();render();
+};
+$('cancel').onclick=()=>render();
+$('reset').onclick=()=>{if(confirm('Effacer toutes les données ?')){S=null;try{localStorage.removeItem(K)}catch(e){}$('goal').value='';$('d1').value='';$('d2').value='';$('wa').value='80,2';$('wb').value='58';$('wd').value='2028-02-14';showSetup(false)}};
+$('edit').onclick=()=>showSetup(true);
+
+function pw(d){
+  if(!S.w)return null;
+  const a=parseFloat(S.w.a),b=parseFloat(S.w.b),n=(iso2t(S.w.d)-iso2t(S.start))/DAY;
+  if(!(n>0))return null;
+  const i=Math.max(0,Math.min((iso2t(d)-iso2t(S.start))/DAY,n));
+  return a+(b-a)*i/n;
+}
+const fw=v=>v.toFixed(2).replace('.',',');
+function tint(tr){
+  const d=tr.dataset.d,inp=tr.querySelector('input[data-k="w"]'),p=pw(d),v=parseFloat(S.wt[d]);
+  inp.style.color=(isFinite(v)&&p!=null)?(v<=p+0.005?'var(--ok)':'#d97706'):'';
+}
+function render(){
+  if(!S)return showSetup(false);
+  $('setup').classList.add('hidden');$('backup').classList.add('hidden');$('main').classList.remove('hidden');
+  const t0=iso2t(S.start),t1=iso2t(S.end),td=todayISO(),n=Math.round((t1-t0)/DAY)+1;
+  let h='';
+  for(let i=0;i<n;i++){const d=t2iso(t0+i*DAY),v=S.steps[d];
+    const p=pw(d),w=S.wt[d];
+    h+=`<tr data-d="${d}"${d===td?' class="today"':''}><td>${dfr(d)}</td><td><input data-k="s" inputmode="numeric" autocomplete="off" data-d="${d}" value="${v?fmt(v):''}"></td><td class="pw">${p==null?'–':fw(p)}</td><td><input data-k="w" inputmode="decimal" autocomplete="off" data-d="${d}" value="${w?String(w).replace('.',','):''}"></td></tr>`}
+  $('rows').innerHTML=h;
+  document.querySelectorAll('#a_rows tr').forEach(tint);
+  $('g').textContent=fmt(S.goal);
+  calc();
+  const r=$('rows').querySelector('tr.today');if(r)setTimeout(()=>r.scrollIntoView({block:'center'}),50);
+}
+$('rows').addEventListener('input',e=>{
+  if(e.target.dataset.k==='w'){
+    let v=e.target.value.replace(/[^0-9.,]/g,'');const i=v.search(/[.,]/);
+    if(i>=0)v=v.slice(0,i+1)+v.slice(i+1).replace(/[.,]/g,'').slice(0,2);
+    v=v.slice(0,6);e.target.value=v;
+    const x=parseFloat(v.replace(',','.'));
+    if(x>0&&x<500)S.wt[e.target.dataset.d]=String(x);else delete S.wt[e.target.dataset.d];
+    save();tint(e.target.closest('tr'));return;
+  }
+  const d=digits(e.target.value).replace(/^0+/,'');
+  if(d)S.steps[e.target.dataset.d]=d;else delete S.steps[e.target.dataset.d];
+  save();calc();
+});
+$('rows').addEventListener('focusout',e=>{
+  if(e.target.dataset.k==='w'){const w=S.wt[e.target.dataset.d];e.target.value=w?String(w).replace('.',','):'';return}
+  const v=S.steps[e.target.dataset.d];e.target.value=v?fmt(v):''});
+
+function calc(){
+  const goal=+S.goal,t0=iso2t(S.start),t1=iso2t(S.end),tt=iso2t(todayISO());
+  let cum=0;for(const k in S.steps)if(iso2t(k)>=t0&&iso2t(k)<=t1)cum+=+S.steps[k];
+  const rem=Math.max(0,goal-cum),over=Math.max(0,cum-goal);
+  $('cum').textContent=fmt(cum);
+  $('pct').textContent=Math.min(100,cum/goal*100).toFixed(1).replace('.',',')+' %';
+  $('bar').style.width=Math.min(100,cum/goal*100)+'%';
+  const done=cum>=goal;
+  $('remL').textContent=done?'Dépassement':'Pas restants';
+  $('rem').textContent=done?'+'+fmt(over):fmt(rem);
+  let days,need;
+  if(tt>t1){days=0;$('needL').textContent='Statut';need='Challenge terminé'}
+  else{
+    days=0;for(let t=Math.max(tt,t0);t<=t1;t+=DAY)if(!S.steps[t2iso(t)])days++;
+    if(done){$('needL').textContent='Statut';need='Objectif atteint 🎉'}
+    else if(!days){$('needL').textContent='Statut';need='Aucun jour libre restant'}
+    else{$('needL').textContent='Pas nécessaires par jour';need=fmt(Math.ceil(rem/days))+' pas/jour'}
+  }
+  $('days').textContent=tt>t1?'0':fmt(days);
+  $('need').textContent=need;
+  $('need').parentElement.style.fontSize='';
+  extras();
+}
+$('bk').onclick=()=>{$('main').classList.add('hidden');$('backup').classList.remove('hidden');$('code').value='';$('imp').value='';$('bmsg').textContent=''};
+$('bback').onclick=()=>render();
+$('ex').onclick=()=>{$('code').value='STEPCD1:'+JSON.stringify(S);$('bmsg').style.color='var(--ok)';$('bmsg').textContent='Code généré. Copie-le.'};
+$('cp').onclick=async()=>{
+  const c=$('code');if(!c.value)return $('bmsg').textContent="Génère d'abord le code.";
+  try{await navigator.clipboard.writeText(c.value);$('bmsg').style.color='var(--ok)';$('bmsg').textContent='Code copié ✔'}
+  catch(e){c.removeAttribute('readonly');c.focus();c.select();c.setSelectionRange(0,c.value.length);
+    let ok=false;try{ok=document.execCommand('copy')}catch(x){}
+    c.setAttribute('readonly','');$('bmsg').style.color='var(--ok)';$('bmsg').textContent=ok?'Code copié ✔':'Sélectionné : appuie longuement puis « Copier ».'}
+};
+$('im').onclick=()=>{
+  const m=$('bmsg');
+  try{
+    let t=$('imp').value.trim();if(!t.startsWith('STEPCD1:'))throw 0;
+    const o=JSON.parse(t.slice(8));
+    if(!o||!/^\d+$/.test(String(o.goal))||!+o.goal||!/^\d{4}-\d\d-\d\d$/.test(o.start)||!/^\d{4}-\d\d-\d\d$/.test(o.end)||iso2t(o.end)<iso2t(o.start)||typeof o.steps!=='object')throw 0;
+    const st={};for(const k in o.steps)if(/^\d{4}-\d\d-\d\d$/.test(k)&&/^\d+$/.test(String(o.steps[k])))st[k]=String(o.steps[k]);
+    if(!confirm('Remplacer les données actuelles par cette sauvegarde ?'))return;
+    const dre=/^\d{4}-\d\d-\d\d$/;let w=null;
+    if(o.w===undefined)w={a:'80.2',b:'58',d:'2028-02-14'};else if(o.w){const a=parseFloat(o.w.a),b=parseFloat(o.w.b);if(!(a>0)||!(b>0)||!dre.test(o.w.d))throw 0;w={a:String(a),b:String(b),d:o.w.d}}
+    const wt={};if(o.wt&&typeof o.wt==='object')for(const k in o.wt){const x=parseFloat(o.wt[k]);if(dre.test(k)&&x>0&&x<500)wt[k]=String(x)}
+    let fo=null;
+    if(o.focus&&(o.focus.type==='week'||o.focus.type==='month')&&/^\d+$/.test(String(o.focus.goal))&&+o.focus.goal&&dre.test(o.focus.start)&&dre.test(o.focus.end))
+      fo={type:o.focus.type,goal:String(o.focus.goal),start:o.focus.start,end:o.focus.end};
+    S={goal:String(o.goal),start:o.start,end:o.end,steps:st,w:w,wt:wt,focus:fo};save();render();
+  }catch(e){m.style.color='#dc2626';m.textContent='Code invalide. Vérifie que tu as copié le code en entier.'}
+};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S)calc()});
+
+
+/* ---------- Focus goal + projections ---------- */
+const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const fdate=(t,y)=>{const d=new Date(t);return d.getUTCDate()+(d.getUTCDate()===1?'er':'')+' '+MOIS[d.getUTCMonth()]+(y?' '+d.getUTCFullYear():'')};
+const pl=(n,w)=>n+' '+w+(n>1?'s':'');
+function periodOf(type,refISO){
+  const t=iso2t(refISO),d=new Date(t);
+  if(type==='month'){const y=d.getUTCFullYear(),m=d.getUTCMonth();return{start:t2iso(Date.UTC(y,m,1)),end:t2iso(Date.UTC(y,m+1,0))}}
+  const wd=(d.getUTCDay()+6)%7;return{start:t2iso(t-wd*DAY),end:t2iso(t-wd*DAY+6*DAY)};
+}
+function plabel(f){
+  if(f.type==='month'){const d=new Date(iso2t(f.start));const m=MOIS[d.getUTCMonth()];return m.charAt(0).toUpperCase()+m.slice(1)+' '+d.getUTCFullYear()}
+  return 'Semaine du '+dfr(f.start).slice(0,5)+' au '+dfr(f.end).slice(0,5);
+}
+function sumRange(a,b){let c=0;for(const k in S.steps)if(k>=a&&k<=b)c+=+S.steps[k];return c}
+/* dernier jour pris en compte pour le rythme : aujourd'hui s'il est rempli, sinon hier */
+function paceEnd(){const td=todayISO();return S.steps[td]?iso2t(td):iso2t(td)-DAY}
+function projText(label,done,goal,from,to,hardEnd,nom){
+  /* from/to = jours (t) pris en compte ; hardEnd = fin de période (t) ou null */
+  const se=Math.min(to,hardEnd||to);
+  if(done<=0||se<from)return '<div class="fm">Saisis tes premiers pas pour voir une projection.</div>';
+  const days=Math.round((se-from)/DAY)+1,avg=done/days,n=Math.ceil((goal-done)/avg);
+  let h='<div class="fm">Moyenne actuelle : '+fmt(Math.round(avg))+' pas/jour (sur '+pl(days,'jour')+').</div>';
+  if(n>36500)return h+'<div class="fm">Rythme trop faible pour une projection utile.</div>';
+  const proj=se+n*DAY;
+  h='<div class="fm" style="font-size:15px;color:var(--tx)">'+label.replace('%d',fdate(proj,new Date(proj).getUTCFullYear()!==new Date().getFullYear()))+'</div>'+h;
+  const dd=Math.round((hardEnd-proj)/DAY);
+  if(hardEnd!==null){
+    if(dd>0)h+='<div class="fm cel">'+pl(dd,'jour')+" d'avance sur "+nom+'.</div>';
+    else if(dd===0)h+='<div class="fm cel">Pile à la fin de '+nom+'.</div>';
+    else h+='<div class="fm late">'+pl(-dd,'jour')+' de retard sur '+nom+'.</div>';
+  }
+  return h;
+}
+function extras(){
+  /* --- projection globale --- */
+  const goal=+S.goal,t0=iso2t(S.start),t1=iso2t(S.end);
+  const cum=sumRange(S.start,S.end);
+  let p;
+  if(cum>=goal){
+    let acc=0,hit=null;
+    for(const k of Object.keys(S.steps).sort()){if(k<S.start||k>S.end)continue;acc+=+S.steps[k];if(acc>=goal){hit=k;break}}
+    p='<div class="fm cel">Objectif global atteint 🎉'+(hit?' le '+dfr(hit):'')+(cum>goal?' (+'+fmt(cum-goal)+' pas bonus)':'')+'.</div>';
+  }else{
+    p=projText('À ton rythme actuel, tu atteindras ton objectif global vers le %d.',cum,goal,t0,Math.min(paceEnd(),t1),t1,'la date de fin du challenge');
+  }
+  p+='<div class="fm" style="font-size:12px">Simple projection basée sur ton rythme moyen actuel : elle change à chaque saisie et ne garantit rien.</div>';
+  $('pview').innerHTML=p;
+  /* --- focus goal --- */
+  const f=S.focus,fv=$('fview');
+  if(!f){
+    fv.innerHTML='<div class="fm">Un objectif plus petit pour la semaine ou le mois. Ces pas comptent aussi pour l\'objectif global.</div>';
+    $('fopen').textContent='Définir un focus goal';$('frenew').classList.add('hidden');return;
+  }
+  const g=+f.goal,done=sumRange(f.start,f.end),over=done-g,td=todayISO(),ended=td>f.end,reached=done>=g;
+  let h='<div class="fm">'+plabel(f)+'</div><div class="fl">'+fmt(done)+' / '+fmt(g)+(reached?' 🎉':'')+'</div>';
+  h+='<div class="bar"><i style="width:'+Math.min(100,done/g*100)+'%"></i></div>';
+  if(reached)h+='<div class="fm cel">'+(over>0?'+'+fmt(over)+' pas bonus ! ':'')+'Objectif du focus atteint. Tous ces pas comptent aussi pour les '+fmt(S.goal)+'.</div>';
+  else h+='<div class="fm">Reste : '+fmt(g-done)+' pas.</div>';
+  if(ended)h+='<div class="fm">Période terminée.</div>';
+  else if(!reached){
+    const from=Math.max(iso2t(f.start),t0);
+    h+=projText('À ton rythme actuel, tu atteindras l\'objectif du focus vers le %d.',done,g,from,paceEnd(),iso2t(f.end),'la fin de la période');
+  }
+  fv.innerHTML=h;
+  $('fopen').textContent='Modifier / retirer';
+  $('frenew').classList.toggle('hidden',!ended);
+}
+function focusEdit(on){
+  $('fedit').classList.toggle('hidden',!on);$('fview').classList.toggle('hidden',on);
+  $('fopen').classList.toggle('hidden',on);
+  if(on){const f=S.focus;$('ftype').value=f?f.type:'week';$('fgoal').value=f?fmt(f.goal):'';$('ferr').textContent='';$('fdel').classList.toggle('hidden',!f);$('frenew').classList.add('hidden')}
+  else extras();
+}
+$('fopen').onclick=()=>focusEdit(true);
+$('fcancel').onclick=()=>focusEdit(false);
+$('fgoal').addEventListener('input',e=>{const d=digits(e.target.value);e.target.value=d?fmt(d.replace(/^0+/,'')||'0'):''});
+$('fsave').onclick=()=>{
+  const g=digits($('fgoal').value),type=$('ftype').value;
+  if(!g||!+g)return $('ferr').textContent='Entre un objectif de pas (entier positif).';
+  const f=S.focus,td=todayISO();
+  const per=(f&&f.type===type&&td<=f.end)?{start:f.start,end:f.end}:periodOf(type,td);
+  S.focus={type:type,goal:g,start:per.start,end:per.end};save();focusEdit(false);
+};
+$('fdel').onclick=()=>{S.focus=null;save();focusEdit(false)};
+$('frenew').onclick=()=>{const f=S.focus;if(!f)return;const per=periodOf(f.type,todayISO());S.focus={type:f.type,goal:f.goal,start:per.start,end:per.end};save();extras()};
+
+
+render();
+
+window.A1={render:render,refresh:function(){if(S)calc()},has:function(){return !!S}};
+})();
+(function(){
+
+const K='stepcountdown24.v1';
+const $=id=>document.getElementById('b_'+id);
+const fmt=n=>Number(n).toLocaleString('fr-FR');
+const digits=s=>String(s).replace(/\D/g,'');
+const p2=n=>String(n).padStart(2,'0');
+const dre=/^\d{4}-\d\d-\d\d$/;
+let S=load();
+function load(){try{return JSON.parse(localStorage.getItem(K))||null}catch(e){return null}}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())};
+const dfr=s=>s.split('-').reverse().join('/');
+let shown='';
+
+function hideAll(){['setup','backup','main'].forEach(i=>$(i).classList.add('hidden'))}
+function showSetup(edit){
+  hideAll();$('setup').classList.remove('hidden');
+  $('cancel').classList.toggle('hidden',!edit);$('reset').classList.toggle('hidden',!edit);
+  $('go').textContent=edit?'Enregistrer':'Commencer la journée';
+  if(edit&&S)$('goal').value=fmt(S.goal);
+  $('err').textContent='';
+}
+$('goal').addEventListener('input',e=>{const d=digits(e.target.value);e.target.value=d?fmt(d.replace(/^0+/,'')||'0'):''});
+$('go').onclick=()=>{
+  const g=digits($('goal').value);
+  if(!g)return $('err').textContent="L'objectif est obligatoire.";
+  if(!+g)return $('err').textContent="L'objectif doit être un entier positif.";
+  S={goal:g,days:(S&&S.days)||{}};save();render();
+};
+$('cancel').onclick=()=>render();
+$('reset').onclick=()=>{if(confirm('Effacer toutes les données ?')){S=null;try{localStorage.removeItem(K)}catch(e){}$('goal').value='';showSetup(false)}};
+$('edit').onclick=()=>showSetup(true);
+
+function render(){
+  if(!S)return showSetup(false);
+  hideAll();$('main').classList.remove('hidden');
+  const td=todayISO();shown=td;const day=S.days[td]||{};
+  let h='';
+  for(let i=0;i<24;i++){const v=day[i];
+    h+=`<tr data-h="${i}"><td>${p2(i)}h – ${p2((i+1)%24)}h</td><td><input inputmode="numeric" autocomplete="off" data-h="${i}" value="${v?fmt(v):''}"></td></tr>`}
+  $('rows').innerHTML=h;
+  $('g').textContent=fmt(S.goal);$('dt').textContent="Aujourd'hui : "+dfr(td);
+  calc();
+  const r=$('rows').querySelector('tr.now');if(r)setTimeout(()=>r.scrollIntoView({block:'center'}),50);
+}
+$('rows').addEventListener('input',e=>{
+  const d=digits(e.target.value).replace(/^0+/,''),td=shown;
+  if(!S.days[td])S.days[td]={};
+  if(d)S.days[td][e.target.dataset.h]=d;else delete S.days[td][e.target.dataset.h];
+  save();calc();
+});
+$('rows').addEventListener('focusout',e=>{const v=(S.days[shown]||{})[e.target.dataset.h];e.target.value=v?fmt(v):''});
+
+function calc(){
+  const goal=+S.goal,day=S.days[shown]||{},now=new Date().getHours();
+  document.querySelectorAll('#b_rows tr').forEach(r=>r.classList.toggle('now',+r.dataset.h===now));
+  let cum=0;for(let i=0;i<24;i++)cum+=+(day[i]||0);
+  const rem=Math.max(0,goal-cum),over=Math.max(0,cum-goal),done=cum>=goal;
+  $('cum').textContent=fmt(cum);
+  $('pct').textContent=Math.min(100,cum/goal*100).toFixed(1).replace('.',',')+' %';
+  $('bar').style.width=Math.min(100,cum/goal*100)+'%';
+  $('remL').textContent=done?'Dépassement':'Pas restants';
+  $('rem').textContent=done?'+'+fmt(over):fmt(rem);
+  let free=0;for(let i=now;i<24;i++)if(!day[i])free++;
+  $('hrs').textContent=free;
+  if(done){$('needL').textContent='Statut';$('need').textContent='Objectif atteint 🎉'}
+  else if(!free){$('needL').textContent='Statut';$('need').textContent='Aucune heure libre restante'}
+  else{$('needL').textContent='Pas nécessaires par heure';$('need').textContent=fmt(Math.ceil(rem/free))+' pas/heure'}
+}
+setInterval(()=>{if(!S||$('main').classList.contains('hidden'))return;if(todayISO()!==shown)render();else calc()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S&&!$('main').classList.contains('hidden')){todayISO()!==shown?render():calc()}});
+
+$('bk').onclick=()=>{hideAll();$('backup').classList.remove('hidden');$('code').value='';$('imp').value='';$('bmsg').textContent=''};
+$('bback').onclick=()=>render();
+$('ex').onclick=()=>{$('code').value='STEPCD24:'+JSON.stringify(S);$('bmsg').style.color='var(--ok)';$('bmsg').textContent='Code généré. Copie-le.'};
+$('cp').onclick=async()=>{
+  const c=$('code'),m=$('bmsg');if(!c.value){m.style.color='';return m.textContent="Génère d'abord le code."}
+  m.style.color='var(--ok)';
+  try{await navigator.clipboard.writeText(c.value);m.textContent='Code copié ✔'}
+  catch(e){c.removeAttribute('readonly');c.focus();c.select();c.setSelectionRange(0,c.value.length);
+    let ok=false;try{ok=document.execCommand('copy')}catch(x){}
+    c.setAttribute('readonly','');m.textContent=ok?'Code copié ✔':'Sélectionné : appuie longuement puis « Copier ».'}
+};
+$('im').onclick=()=>{
+  const m=$('bmsg');m.style.color='';
+  try{
+    const t=$('imp').value.trim();if(!t.startsWith('STEPCD24:'))throw 0;
+    const o=JSON.parse(t.slice(9));
+    if(!o||!/^\d+$/.test(String(o.goal))||!+o.goal||typeof o.days!=='object')throw 0;
+    const days={};
+    for(const k in o.days){if(!dre.test(k))continue;const src=o.days[k],dd={};
+      for(let i=0;i<24;i++)if(src&&/^\d+$/.test(String(src[i]))&&+src[i])dd[i]=String(src[i]);
+      days[k]=dd}
+    if(!confirm('Remplacer les données actuelles par cette sauvegarde ?'))return;
+    S={goal:String(o.goal),days:days};save();render();
+  }catch(e){m.textContent='Code invalide. Vérifie que tu as copié le code en entier.'}
+};
+
+
+render();
+
+window.A2={render:render,refresh:function(){if(S)calc()},has:function(){return !!S}};
+})();
+(function(){
+var navs=document.querySelectorAll('nav button'),ids=['p0','p1','p2'];
+function t(id){var e=document.getElementById(id);return e?e.textContent:''}
+function home(){
+  A1.refresh();A2.refresh();
+  document.getElementById('h1s').textContent=A1.has()?t('a_need')+' · '+t('a_cum')+' / '+t('a_g')+' pas':'Pas encore configurée';
+  document.getElementById('h2s').textContent=A2.has()?t('b_need')+' · '+t('b_cum')+' / '+t('b_g')+' pas':'Pas encore configurée';
+}
+function go(i){
+  ids.forEach(function(s,k){document.getElementById(s).classList.toggle('hidden',k!==i)});
+  navs.forEach(function(b,k){b.classList.toggle('on',k===i)});
+  if(i===1)A1.render();else if(i===2)A2.render();else home();
+  window.scrollTo(0,0);
+  try{history.replaceState(null,'','#'+i)}catch(e){}
+}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-go]');if(b)go(+b.dataset.go)});
+var h=+(location.hash||'#0').slice(1);go(h===1||h===2?h:0);
+})();
+if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
+</script>
+</body>
+</html>
